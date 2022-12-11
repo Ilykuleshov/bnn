@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision
 from .bayes_base_module import BayesBaseModule
-from .utils import init_with_distribution_
+from .utils import init_distributed_
 
 class BayesConv2d(nn.Conv2d, BayesBaseModule):
     r"""
@@ -23,26 +23,12 @@ class BayesConv2d(nn.Conv2d, BayesBaseModule):
     def __init__(self, 
                  weight_distribution, 
                  bias_distribution, 
-                 in_channels, 
-                 out_channels, 
-                 kernel_size, 
-                 stride=1, 
-                 padding=0, 
-                 dilation=1, 
-                 padding_mode='zeros', 
-                 groups=1):
+                 **kwargs):
         
-        super(BayesConv2d, self).__init__(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            kernel_size=kernel_size,
-            stride=stride,
-            padding=padding,
-            dilation=dilation,
-            padding_mode=padding_mode)
+        super(BayesConv2d, self).__init__(**kwargs)
         
         self.weight_distribution = weight_distribution
         self.bias_distribution = bias_distribution
 
-#         init_with_distribution_(self.weight, self.weight_distribution)
-#         init_with_distribution_(self.bias, self.bias_distribution)
+        init_distributed_(self.weight, self.weight_distribution)
+        init_distributed_(self.bias, self.bias_distribution)

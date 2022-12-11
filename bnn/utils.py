@@ -1,10 +1,13 @@
 from typing import *
 
 import torch
+from torch.nn.parameter import Parameter
 from torch.distributions import Distribution
 
 @torch.no_grad()
-def init_with_distribution_(tensor: Union[torch.Tensor, None], distribution: Distribution):
+def init_distributed_(tensor: Union[torch.Tensor, None], distribution: Distribution):
     if tensor is not None:
-        tensor.set_(distribution.sample(tensor.shape))
-
+        sample = distribution.sample(tensor.shape)
+        assert sample.shape == tensor.shape, f'Shape mismatch! {sample.shape} != {tensor.shape}'
+        tensor.set_(sample)
+        return tensor
