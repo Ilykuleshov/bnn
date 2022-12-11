@@ -8,6 +8,7 @@ from tqdm import trange
 
 from .bayes_base_module import BayesBaseModule
 from .slgd import SLGD
+from .utils import add_scalars
 from torch.utils.tensorboard import SummaryWriter
 
 class BayesModel:
@@ -17,7 +18,7 @@ class BayesModel:
                  batch_size: int, 
                  lr: float, 
                  temperature: float,
-                 architecture,
+                 architecture: nn.Module,
                  device='cuda'):
         self.train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
         self.test_dataloader = DataLoader(test_dataset, batch_size, shuffle=True)
@@ -31,47 +32,53 @@ class BayesModel:
     def fit(self, n_epochs):
         writer = SummaryWriter()
         for i in trange(n_epochs):
-            loss = self.training_step()
-            writer.add_scalar('Loss/train', loss, i)
-            if i % 15 == 0:
-                self.architecture.eval()
-                with torch.no_grad():
-                    total_loss = 0
-                    accuracy = 0
-                    for (x, y) in iter(self.test_dataloader):
-                        x = x.to(self.device)
-                        y = y.to(self.device)
+            step_results = self.training_step()
+            add_scalars(writer, 'Train', step_results, i)
 
-                        y_pred = self.architecture(x)
-                        loss_test = self.cross_entropy(y_pred, y) - self.architecture.log_prior() / self.eff_num_data   
-                        total_loss += loss_test
-                        accuracy += (torch.argmax(y_pred, dim = -1) == y).sum() / len(y)
-                    writer.add_scalar('Loss/test', total_loss / len(self.test_dataloader), i)
-                    writer.add_scalar('Accuracy/test', accuracy / len(self.test_dataloader), i)
-                self.architecture.train()
-                                      
+            if i % 15 == 0:
+                step_results = self.evaluate()
+                add_scalars(writer, 'Test', step_results, i)
+
+    def calc_losses(self, y_true, y_pred):
+        ce_loss = self.cross_entropy(y_pred, y_true)
+        prior_loss = - self.architecture.log_prior() / self.eff_num_data
+        accuracy = (torch.argmax(y_pred, dim = -1) == y_true).sum() / len(y_true)
+
+        return ce_loss, prior_loss, accuracy
+    
     def training_step(self):
-        total_loss = 0
-        for (x, y) in iter(self.train_dataloader):
-            self.optimizer.zero_grad()
+        self.architecture.train()
+        return self.step(self.train_dataloader)
+
+    @torch.no_grad()
+    def evaluate(self):
+        self.architecture.eval()
+        return self.step(self.test_dataloader)
+
+    def step(self, dataloader):
+        ce_loss_total = 0
+        prior_loss_total = 0
+        accuracy_total = 0
+
+        for (x, y) in iter(dataloader):
             x = x.to(self.device)
             y = y.to(self.device)
 
             y_pred = self.architecture(x)
-            loss = self.cross_entropy(y_pred, y) - self.architecture.log_prior() / self.eff_num_data
-            total_loss += loss
-            loss.backward()
-            self.optimizer.step()
+            ce_loss, prior_loss, accuracy = self.calc_losses(y, y_pred)
+            loss: torch.Tensor = ce_loss + prior_loss
             
-        return total_loss / len(self.train_dataloader)
-    
-    def evaluate(self):
-        with torch.no_grad():
-            accuracy = 0
-            for (x, y) in iter(self.test_dataloader):
-                x = x.to(self.device)
-                y = y.to(self.device)
+            if self.architecture.training:
+                self.optimizer.zero_grad()
+                loss.backward()
+                self.optimizer.step()
+            
+            ce_loss_total += ce_loss.detach().item()
+            prior_loss_total += prior_loss.detach().item()
+            accuracy_total += accuracy.detach().item()
+            
+        ce_loss_total /= len(dataloader)
+        prior_loss_total /= len(dataloader)
+        accuracy_total /= len(dataloader)
 
-                y_pred = self.architecture(x)
-                accuracy += (torch.argmax(y_pred, dim = -1) == y).sum() / len(y)
-        return accuracy / len(self.test_dataloader)
+        return {'ce_loss': ce_loss_total, 'prior_loss': prior_loss_total, 'error': 1 - accuracy_total}
