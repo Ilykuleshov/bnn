@@ -29,8 +29,8 @@ class BayesModel:
         self.eff_num_data = len(train_dataset)
         self.device = device
     
-    def fit(self, n_epochs):
-        writer = SummaryWriter()
+    def fit(self, n_epochs, log_dir=None):
+        writer = SummaryWriter(log_dir=log_dir)
         for i in trange(n_epochs):
             step_results = self.training_step()
             add_scalars(writer, 'Train', step_results, i)
