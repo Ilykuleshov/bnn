@@ -1,11 +1,11 @@
 import math
+import numpy as np
 
 import torch
-import torch.nn.init as init
-from torch.nn import Module, Parameter
-import torch.nn.functional as F
-
-from torch.nn.modules.utils import _single, _pair, _triple
+import torch.nn as nn
+import torch.optim as optim
+import torchvision
+from torch.distributions.multivariate_normal import MultivariateNormal
 
 class BayesConv2d(nn.Conv2d):
     r"""
@@ -45,4 +45,4 @@ class BayesConv2d(nn.Conv2d):
         m = MultivariateNormal(torch.ones(self.weight.numel()) * prior_mu,
                               torch.eye(self.weight.numel()) * prior_sigma)
         sampled_weights = m.rsample()
-        self.weight = Parameter(sampled_weights.reshape(self.weight.shape))
+        self.weight = nn.Parameter(sampled_weights.reshape(self.weight.shape))
