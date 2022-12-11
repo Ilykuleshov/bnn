@@ -25,6 +25,7 @@ class BayesModel:
         self.cross_entropy = nn.CrossEntropyLoss()
         self.lr = lr
         self.optimizer = SLGD(self.architecture.parameters(), lr, temperature=temperature)
+        self.eff_num_data = len(train_dataset)
         self.device = device
     
     def fit(self, n_epochs):
@@ -57,7 +58,7 @@ class BayesModel:
             y = y.to(self.device)
 
             y_pred = self.architecture(x)
-            loss = self.cross_entropy(y_pred, y) - self.architecture.log_prior()
+            loss = self.cross_entropy(y_pred, y) - self.architecture.log_prior() / self.eff_num_data
             total_loss += loss
             loss.backward()
             self.optimizer.step()

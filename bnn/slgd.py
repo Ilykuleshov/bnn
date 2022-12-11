@@ -1,5 +1,6 @@
 import torch
 from torch.optim import Optimizer
+from math import sqrt
 
 
 class SLGD(Optimizer):
@@ -76,7 +77,7 @@ class SLGD(Optimizer):
 
                     # add tempered noise
                     if temperature > 0:
-                        d_p = d_p.add(torch.randn_like(d_p).mul_(temperature))
+                        d_p = d_p.add(torch.randn_like(d_p).mul_(sqrt(2 * (1 - momentum) * temperature)))
 
                 alpha = lr if maximize else -lr
                 param.add_(d_p, alpha=alpha)
