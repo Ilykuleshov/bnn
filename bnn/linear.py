@@ -13,5 +13,5 @@ class BayesLinear(nn.Linear, BayesBaseModule):
         self.weight_distribution = weight_distribution
         self.bias_distribution = bias_distribution
 
-        init_with_distribution_(self.weight, self.weight_distribution)
-        init_with_distribution_(self.bias, self.bias_distribution)
+       # init_with_distribution_(self.weight, self.weight_distribution)
+      #  init_with_distribution_(self.bias, self.bias_distribution)

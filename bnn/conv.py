@@ -5,9 +5,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision
-from torch.distributions.multivariate_normal import MultivariateNormal
+from .bayes_base_module import BayesBaseModule
+from .utils import init_with_distribution_
 
-class BayesConv2d(nn.Conv2d):
+class BayesConv2d(nn.Conv2d, BayesBaseModule):
     r"""
     Applies Bayesian Convolution for 2D inputs
 
@@ -20,8 +21,8 @@ class BayesConv2d(nn.Conv2d):
     
     """
     def __init__(self, 
-                 prior_mu, 
-                 prior_sigma, 
+                 weight_distribution, 
+                 bias_distribution, 
                  in_channels, 
                  out_channels, 
                  kernel_size, 
@@ -40,9 +41,8 @@ class BayesConv2d(nn.Conv2d):
             dilation=dilation,
             padding_mode=padding_mode)
         
-        self.prior_mu = prior_mu
-        self.prior_sigma = prior_sigma
-        m = MultivariateNormal(torch.ones(self.weight.numel()) * prior_mu,
-                              torch.eye(self.weight.numel()) * prior_sigma)
-        sampled_weights = m.rsample()
-        self.weight = nn.Parameter(sampled_weights.reshape(self.weight.shape))
+        self.weight_distribution = weight_distribution
+        self.bias_distribution = bias_distribution
+
+#         init_with_distribution_(self.weight, self.weight_distribution)
+#         init_with_distribution_(self.bias, self.bias_distribution)
