@@ -43,7 +43,7 @@ class BayesModel:
                         y = y.to(self.device)
 
                         y_pred = self.architecture(x)
-                        loss_test = self.cross_entropy(y_pred, y) - self.architecture.log_prior()    
+                        loss_test = self.cross_entropy(y_pred, y) - self.architecture.log_prior() / self.eff_num_data   
                         total_loss += loss_test
                         accuracy += (torch.argmax(y_pred, dim = -1) == y).sum() / len(y)
                     writer.add_scalar('Loss/test', total_loss / len(self.test_dataloader), i)
