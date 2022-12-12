@@ -23,10 +23,10 @@ class BayesModel:
         self.train_dataloader = DataLoader(train_dataset, batch_size, shuffle=True)
         self.test_dataloader = DataLoader(test_dataset, batch_size, shuffle=True)
         self.architecture = architecture.to(device)
-        self.cross_entropy = nn.CrossEntropyLoss()
+        self.cross_entropy = nn.CrossEntropyLoss(reduction='sum')
         self.lr = lr
-        self.optimizer = SLGD(self.architecture.parameters(), lr, temperature=temperature)
-        self.eff_num_data = len(train_dataset)
+        self.num_data = len(train_dataset)
+        self.optimizer = SLGD(self.architecture.parameters(), lr, temperature=temperature, num_data=self.num_data)
         self.device = device
     
     def fit(self, n_epochs, log_dir=None):
@@ -41,7 +41,7 @@ class BayesModel:
 
     def calc_losses(self, y_true, y_pred):
         ce_loss = self.cross_entropy(y_pred, y_true)
-        prior_loss = - self.architecture.log_prior() / self.eff_num_data
+        prior_loss = - self.architecture.log_prior() / self.num_data
         accuracy = (torch.argmax(y_pred, dim = -1) == y_true).sum() / len(y_true)
 
         return ce_loss, prior_loss, accuracy
