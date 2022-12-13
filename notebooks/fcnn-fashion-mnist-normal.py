@@ -15,13 +15,13 @@ distr = Normal(torch.tensor(0.), torch.tensor(0.05))
 mdl = FCNN(weight_distribution = distr,
                  bias_distribution = distr)
                  
-train_set = torchvision.datasets.FashionMNIST(root=dataset_dir,
+train_set = torchvision.datasets.FashionMNIST(root='./files',
                                            train=True,
-                                           transform= None, #transforms.ToTensor(),
+                                           transform= torchvision.transforms.ToTensor(),
                                            download=True)
 
-val_set = torchvision.datasets.FashionMNIST(root=dataset_dir,
-                                                 transform= None, #transforms.ToTensor(),
+val_set = torchvision.datasets.FashionMNIST(root='./files',
+                                                 transform= torchvision.transforms.ToTensor(),
                                                  train=False)
 
 
