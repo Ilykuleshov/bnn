@@ -4,3 +4,4 @@ from .linear import *
 from .slgd import *
 from .train import *
 from .utils import *
+from .models import *
