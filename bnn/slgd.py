@@ -47,7 +47,7 @@ class SLGD(Optimizer):
 
                 # add tempered noise
                 if temperature > 0:
-                    d_p = d_p.add(torch.randn_like(d_p).mul_(sqrt(2 * (temperature) * lr / num_data)))
+                    d_p = d_p.add(torch.randn_like(d_p).mul_(sqrt(2 * (temperature) * lr)))
 
                 alpha = lr if maximize else -lr
                 param.add_(d_p, alpha=alpha)
